@@ -1,6 +1,6 @@
 # PROGRESS
 
-_Updated: 2026-08-25 05:33 UTC_
+_Updated: 2026-08-25 05:48 UTC_
 
 ## Coverage
 
@@ -13,15 +13,15 @@ _Updated: 2026-08-25 05:33 UTC_
 
 | column | mean | sd | min | max | n_missing |
 |---|---|---|---|---|---|
-| wind10_fc | 3.715 | 1.525 | 0.856 | 11.469 | 11 |
-| wind10_an | 3.669 | 1.510 | 0.906 | 11.867 | 16 |
-| e_wind10 | 0.045 | 0.329 | -2.123 | 2.782 | 27 |
-| wind100_fc | 5.538 | 2.268 | 0.899 | 16.202 | 11 |
-| wind100_an | 5.460 | 2.231 | 0.931 | 16.554 | 16 |
-| e_wind100 | 0.078 | 0.519 | -3.118 | 3.860 | 27 |
-| dswrf_fc | 196.308 | 271.607 | 0.000 | 1014.130 | 17 |
-| dswrf_an | 197.088 | 272.376 | 0.000 | 1017.918 | 24 |
-| e_dswrf | -0.767 | 21.598 | -338.280 | 287.695 | 41 |
+| wind10_fc | 3.715 | 1.525 | 0.856 | 11.469 | 0 |
+| wind10_an | 3.669 | 1.510 | 0.906 | 11.867 | 0 |
+| e_wind10 | 0.045 | 0.329 | -2.123 | 2.782 | 0 |
+| wind100_fc | 5.538 | 2.268 | 0.898 | 16.202 | 0 |
+| wind100_an | 5.460 | 2.231 | 0.931 | 16.554 | 0 |
+| e_wind100 | 0.078 | 0.519 | -3.118 | 3.860 | 0 |
+| dswrf_fc | 196.300 | 271.595 | 0.000 | 1014.130 | 0 |
+| dswrf_an | 197.072 | 272.355 | 0.000 | 1017.918 | 0 |
+| e_dswrf | -0.771 | 21.595 | -338.280 | 287.695 | 0 |
 
 ## Spatial weighting in force
 
@@ -120,7 +120,20 @@ Capacity source: `wind=OSM/Dunnett turbine counts; solar=Kruitwagen PV`.
    the cell aggregation changes -- a different weight vector needs a full
    re-run, since the CSV stores province aggregates rather than cell values.
 
-5. **Error magnitudes are understated relative to true forecast error.** The
+5. **Stale `.idx` files on 2022-11-29/30, recovered by scanning.** Nineteen GFS
+   objects around those two cycles ship an index whose byte offsets have
+   drifted from the object (the index puts message 1 at 878087 where the file
+   has it at 876412), so range-fetching returned mid-message bytes and eccodes
+   raised "Wrong message length". This reproduces on retry, so it is the
+   archive, not the network. The objects themselves are intact: every GRIB2
+   message declares its own length, and the index still lists messages in file
+   order, so `gfslib.fetch_fields_scan` downloads the object once and walks the
+   message chain locally to recover the fields. `get_decoded` now falls back to
+   it automatically, so a future re-run self-heals. It initially left 41 rows
+   NaN across 2022-11-30 and 2022-12-01; after the repair pass the panel has no
+   missing values.
+
+6. **Error magnitudes are understated relative to true forecast error.** The
    "actual" is itself a GFS short-lead forecast, so it shares initial
    conditions and model physics with the day-ahead forecast. These errors
    measure the day-ahead-vs-near-analysis revision, not forecast-vs-observation
@@ -130,24 +143,7 @@ Capacity source: `wind=OSM/Dunnett turbine counts; solar=Kruitwagen PV`.
 
 ## Anomalies
 
-- `2022-11-26..2022-11-30: 2022-11-29 18z f002: error: Wrong message length`
-- `2022-11-26..2022-11-30: 2022-11-29 18z f003: error: Wrong message length`
-- `2022-11-26..2022-11-30: 2022-11-30 00z f002: error: Wrong message length`
-- `2022-11-26..2022-11-30: 2022-11-30 00z f005: error: Wrong message length`
-- `2022-11-26..2022-11-30: 2022-11-30 06z f002: error: Wrong message length`
-- `2022-11-26..2022-11-30: 2022-11-30 06z f003: error: Wrong message length`
-- `2022-11-26..2022-11-30: 2022-11-30 06z f004: error: Wrong message length`
-- `2022-11-26..2022-11-30: 2022-11-30 06z f005: error: Wrong message length`
-- `2022-12-01..2022-12-05: 2022-11-30 00z f016: error: Wrong message length`
-- `2022-12-01..2022-12-05: 2022-11-30 00z f020: error: Wrong message length`
-- `2022-12-01..2022-12-05: 2022-11-30 00z f026: error: Wrong message length`
-- `2022-12-01..2022-12-05: 2022-11-30 00z f027: error: Wrong message length`
-- `2022-12-01..2022-12-05: 2022-11-30 00z f028: error: Wrong message length`
-- `2022-12-01..2022-12-05: 2022-11-30 00z f029: error: Wrong message length`
-- `2022-12-01..2022-12-05: 2022-11-30 00z f031: error: Wrong message length`
-- `2022-12-01..2022-12-05: 2022-11-30 00z f033: error: Wrong message length`
-- `2022-12-01..2022-12-05: 2022-11-30 00z f035: error: Wrong message length`
-- `2022-12-01..2022-12-05: 2022-11-30 00z f036: error: Wrong message length`
-- `2022-12-01..2022-12-05: 2022-11-30 00z f038: error: Wrong message length`
+- `RESOLVED: 19 GFS objects on the 2022-11-29 and 2022-11-30 cycles had stale .idx offsets (see deviation 5). They initially left 41 rows NaN on 2022-11-30 and 2022-12-01; a repair pass using the message-chain scan fallback recovered all of them. The panel now has no missing values.`
+- `No other GFS object failed to fetch or decode across all 1,728 delivery days.`
 
-_Elapsed this run: 74.0 min_
+_Elapsed this run: 74.1 min_

@@ -176,6 +176,45 @@ def fetch_fields(url: str, wanted: Sequence[tuple[str, str]]) -> bytes:
     return b"".join(chunks)
 
 
+def fetch_fields_scan(url: str, wanted: Sequence[tuple[str, str]]) -> bytes:
+    """Fallback for objects whose ``.idx`` byte offsets do not match the file.
+
+    A handful of GFS objects (2022-11-29/30 in this sample) ship an index whose
+    offsets drift from the actual object -- range-fetching by index then returns
+    mid-message garbage and eccodes raises "Wrong message length". The object
+    itself is fine, so recover by downloading it once and walking the GRIB
+    message chain locally: every GRIB2 message declares its own total length at
+    bytes 8-15, and the index still lists messages in file order, so position i
+    in the index names message i in the file.
+
+    Expensive (a whole ~500 MB object) -- only ever used as a fallback.
+    """
+    want = set(wanted)
+    names = [(var, lvl) for var, lvl, _s, _e in idx_offsets(url)]
+
+    fd, path = tempfile.mkstemp(suffix=".grib2.scan")
+    try:
+        with os.fdopen(fd, "wb") as fh:
+            with session().get(url, stream=True, timeout=300) as r:
+                r.raise_for_status()
+                for chunk in r.iter_content(chunk_size=4 << 20):
+                    fh.write(chunk)
+
+        chunks: list[bytes] = []
+        with open(path, "rb") as fh:
+            for i in range(len(names)):
+                head = fh.read(16)
+                if len(head) < 16 or head[:4] != b"GRIB":
+                    break                      # ran off the end of the chain
+                length = int.from_bytes(head[8:16], "big")
+                body = fh.read(length - 16)
+                if names[i] in want:
+                    chunks.append(head + body)
+        return b"".join(chunks)
+    finally:
+        os.unlink(path)                        # raw GRIB stays disposable
+
+
 def decode(raw: bytes) -> tuple[dict[str, np.ndarray], dict[str, str]]:
     """Decode concatenated GRIB messages and subset to the Shandong bbox.
 
@@ -219,9 +258,22 @@ def decode(raw: bytes) -> tuple[dict[str, np.ndarray], dict[str, str]]:
     return vals, steps
 
 
-def get_decoded(day, cycle: int, fhr: int, wanted: Sequence[tuple[str, str]]):
-    """Fetch + decode one GFS object's selected fields in one call."""
-    return decode(fetch_fields(grib_url(day, cycle, fhr), wanted))
+def get_decoded(day, cycle: int, fhr: int, wanted: Sequence[tuple[str, str]],
+                allow_scan: bool = True):
+    """Fetch + decode one GFS object's selected fields in one call.
+
+    Falls back to :func:`fetch_fields_scan` when the object's index turns out
+    to be misaligned with the object (see that function).
+    """
+    url = grib_url(day, cycle, fhr)
+    try:
+        return decode(fetch_fields(url, wanted))
+    except MissingObject:
+        raise
+    except Exception:
+        if not allow_scan:
+            raise
+        return decode(fetch_fields_scan(url, wanted))
 
 
 def wind_speed(u: np.ndarray, v: np.ndarray) -> np.ndarray:

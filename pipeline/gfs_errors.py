@@ -434,7 +434,20 @@ DEVIATIONS = """\
    the cell aggregation changes -- a different weight vector needs a full
    re-run, since the CSV stores province aggregates rather than cell values.
 
-5. **Error magnitudes are understated relative to true forecast error.** The
+5. **Stale `.idx` files on 2022-11-29/30, recovered by scanning.** Nineteen GFS
+   objects around those two cycles ship an index whose byte offsets have
+   drifted from the object (the index puts message 1 at 878087 where the file
+   has it at 876412), so range-fetching returned mid-message bytes and eccodes
+   raised "Wrong message length". This reproduces on retry, so it is the
+   archive, not the network. The objects themselves are intact: every GRIB2
+   message declares its own length, and the index still lists messages in file
+   order, so `gfslib.fetch_fields_scan` downloads the object once and walks the
+   message chain locally to recover the fields. `get_decoded` now falls back to
+   it automatically, so a future re-run self-heals. It initially left 41 rows
+   NaN across 2022-11-30 and 2022-12-01; after the repair pass the panel has no
+   missing values.
+
+6. **Error magnitudes are understated relative to true forecast error.** The
    "actual" is itself a GFS short-lead forecast, so it shares initial
    conditions and model physics with the day-ahead forecast. These errors
    measure the day-ahead-vs-near-analysis revision, not forecast-vs-observation
