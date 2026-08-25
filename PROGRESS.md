@@ -1,27 +1,27 @@
 # PROGRESS
 
-_Updated: 2026-08-25 04:14 UTC_
+_Updated: 2026-08-25 04:15 UTC_
 
 ## Coverage
 
-- Processed through: **2022-01-19**
-- Days in panel: **50**
-- Rows: **2,400** (expected 48 per day: 24 hours x 2 vintages)
-- Date range: 2021-12-01 .. 2022-01-19
+- Processed through: **2022-03-10**
+- Days in panel: **100**
+- Rows: **4,800** (expected 48 per day: 24 hours x 2 vintages)
+- Date range: 2021-12-01 .. 2022-03-10
 
 ## Value ranges
 
 | column | mean | sd | min | max | n_missing |
 |---|---|---|---|---|---|
-| wind10_fc | 4.089 | 1.671 | 1.076 | 10.788 | 0 |
-| wind10_an | 4.133 | 1.678 | 1.379 | 10.678 | 0 |
-| e_wind10 | -0.044 | 0.221 | -1.310 | 0.765 | 0 |
-| wind100_fc | 5.518 | 2.251 | 1.239 | 14.185 | 0 |
-| wind100_an | 5.583 | 2.260 | 1.654 | 14.314 | 0 |
-| e_wind100 | -0.065 | 0.330 | -1.697 | 1.324 | 0 |
-| dswrf_fc | 110.994 | 169.622 | -0.009 | 552.859 | 0 |
-| dswrf_an | 111.248 | 169.705 | -0.006 | 550.793 | 0 |
-| e_dswrf | -0.254 | 6.798 | -61.952 | 72.124 | 0 |
+| wind10_fc | 3.997 | 1.569 | 1.076 | 10.788 | 0 |
+| wind10_an | 4.013 | 1.569 | 1.379 | 10.678 | 0 |
+| e_wind10 | -0.016 | 0.239 | -1.832 | 1.045 | 0 |
+| wind100_fc | 5.430 | 2.210 | 1.239 | 14.739 | 0 |
+| wind100_an | 5.450 | 2.211 | 1.502 | 14.314 | 0 |
+| e_wind100 | -0.020 | 0.355 | -2.441 | 1.699 | 0 |
+| dswrf_fc | 137.979 | 206.846 | -0.009 | 801.330 | 0 |
+| dswrf_an | 138.320 | 207.384 | -0.007 | 798.920 | 0 |
+| e_dswrf | -0.342 | 9.743 | -90.677 | 105.876 | 0 |
 
 ## Spec deviations
 
@@ -91,4 +91,4 @@ _Updated: 2026-08-25 04:14 UTC_
 
 - none: every GFS object requested so far decoded cleanly
 
-_Elapsed this run: 2.6 min_
+_Elapsed this run: 4.4 min_
