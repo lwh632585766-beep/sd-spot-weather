@@ -1,27 +1,27 @@
 # PROGRESS
 
-_Updated: 2026-08-25 04:22 UTC_
+_Updated: 2026-08-25 04:24 UTC_
 
 ## Coverage
 
-- Processed through: **2022-01-19**
-- Days in panel: **50**
-- Rows: **2,400** (expected 48 per day: 24 hours x 2 vintages)
-- Date range: 2021-12-01 .. 2022-01-19
+- Processed through: **2022-03-10**
+- Days in panel: **100**
+- Rows: **4,800** (expected 48 per day: 24 hours x 2 vintages)
+- Date range: 2021-12-01 .. 2022-03-10
 
 ## Value ranges
 
 | column | mean | sd | min | max | n_missing |
 |---|---|---|---|---|---|
-| wind10_fc | 3.344 | 1.448 | 1.055 | 9.592 | 0 |
-| wind10_an | 3.382 | 1.470 | 1.288 | 9.466 | 0 |
-| e_wind10 | -0.039 | 0.201 | -1.327 | 0.789 | 0 |
-| wind100_fc | 4.980 | 2.075 | 1.257 | 13.222 | 0 |
-| wind100_an | 5.042 | 2.099 | 1.570 | 13.363 | 0 |
-| e_wind100 | -0.062 | 0.328 | -1.742 | 1.313 | 0 |
-| dswrf_fc | 111.923 | 171.140 | 0.000 | 556.768 | 0 |
-| dswrf_an | 112.268 | 171.275 | 0.000 | 554.862 | 0 |
-| e_dswrf | -0.345 | 7.455 | -79.205 | 85.225 | 0 |
+| wind10_fc | 3.355 | 1.405 | 1.055 | 10.273 | 0 |
+| wind10_an | 3.373 | 1.417 | 1.277 | 9.900 | 0 |
+| e_wind10 | -0.018 | 0.217 | -1.791 | 1.073 | 0 |
+| wind100_fc | 4.957 | 2.072 | 1.257 | 14.222 | 0 |
+| wind100_an | 4.981 | 2.085 | 1.263 | 13.856 | 0 |
+| e_wind100 | -0.024 | 0.347 | -2.328 | 1.800 | 0 |
+| dswrf_fc | 138.521 | 207.717 | 0.000 | 803.799 | 0 |
+| dswrf_an | 138.963 | 208.319 | 0.000 | 801.207 | 0 |
+| e_dswrf | -0.442 | 10.426 | -94.106 | 95.353 | 0 |
 
 ## Spatial weighting in force
 
@@ -132,4 +132,4 @@ Capacity source: `wind=OSM/Dunnett turbine counts; solar=Kruitwagen PV`.
 
 - none: every GFS object requested so far decoded cleanly
 
-_Elapsed this run: 2.6 min_
+_Elapsed this run: 4.4 min_
