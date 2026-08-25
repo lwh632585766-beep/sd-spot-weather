@@ -1,27 +1,27 @@
 # PROGRESS
 
-_Updated: 2026-08-25 04:35 UTC_
+_Updated: 2026-08-25 04:36 UTC_
 
 ## Coverage
 
-- Processed through: **2022-11-15**
-- Days in panel: **350**
-- Rows: **16,800** (expected 48 per day: 24 hours x 2 vintages)
-- Date range: 2021-12-01 .. 2022-11-15
+- Processed through: **2023-01-04**
+- Days in panel: **400**
+- Rows: **19,200** (expected 48 per day: 24 hours x 2 vintages)
+- Date range: 2021-12-01 .. 2023-01-04
 
 ## Value ranges
 
 | column | mean | sd | min | max | n_missing |
 |---|---|---|---|---|---|
-| wind10_fc | 3.626 | 1.522 | 1.055 | 11.024 | 0 |
-| wind10_an | 3.582 | 1.514 | 1.038 | 11.302 | 0 |
-| e_wind10 | 0.044 | 0.334 | -1.864 | 2.297 | 0 |
-| wind100_fc | 5.382 | 2.290 | 1.037 | 16.106 | 0 |
-| wind100_an | 5.304 | 2.267 | 1.173 | 16.536 | 0 |
-| e_wind100 | 0.078 | 0.528 | -2.948 | 3.305 | 0 |
-| dswrf_fc | 198.350 | 271.223 | 0.000 | 1010.347 | 0 |
-| dswrf_an | 198.959 | 271.477 | 0.000 | 1007.119 | 0 |
-| e_dswrf | -0.609 | 21.055 | -338.280 | 276.413 | 0 |
+| wind10_fc | 3.601 | 1.551 | 1.055 | 11.024 | 11 |
+| wind10_an | 3.568 | 1.545 | 1.038 | 11.302 | 16 |
+| e_wind10 | 0.032 | 0.325 | -1.864 | 2.297 | 27 |
+| wind100_fc | 5.330 | 2.326 | 1.037 | 16.106 | 11 |
+| wind100_an | 5.272 | 2.306 | 1.173 | 16.536 | 16 |
+| e_wind100 | 0.057 | 0.516 | -2.948 | 3.305 | 27 |
+| dswrf_fc | 186.827 | 262.106 | 0.000 | 1010.347 | 17 |
+| dswrf_an | 187.506 | 262.514 | 0.000 | 1007.119 | 24 |
+| e_dswrf | -0.626 | 20.170 | -338.280 | 276.413 | 41 |
 
 ## Spatial weighting in force
 
@@ -130,6 +130,24 @@ Capacity source: `wind=OSM/Dunnett turbine counts; solar=Kruitwagen PV`.
 
 ## Anomalies
 
-- none: every GFS object requested so far decoded cleanly
+- `2022-11-26..2022-11-30: 2022-11-29 18z f002: error: Wrong message length`
+- `2022-11-26..2022-11-30: 2022-11-29 18z f003: error: Wrong message length`
+- `2022-11-26..2022-11-30: 2022-11-30 00z f002: error: Wrong message length`
+- `2022-11-26..2022-11-30: 2022-11-30 00z f005: error: Wrong message length`
+- `2022-11-26..2022-11-30: 2022-11-30 06z f002: error: Wrong message length`
+- `2022-11-26..2022-11-30: 2022-11-30 06z f003: error: Wrong message length`
+- `2022-11-26..2022-11-30: 2022-11-30 06z f004: error: Wrong message length`
+- `2022-11-26..2022-11-30: 2022-11-30 06z f005: error: Wrong message length`
+- `2022-12-01..2022-12-05: 2022-11-30 00z f016: error: Wrong message length`
+- `2022-12-01..2022-12-05: 2022-11-30 00z f020: error: Wrong message length`
+- `2022-12-01..2022-12-05: 2022-11-30 00z f026: error: Wrong message length`
+- `2022-12-01..2022-12-05: 2022-11-30 00z f027: error: Wrong message length`
+- `2022-12-01..2022-12-05: 2022-11-30 00z f028: error: Wrong message length`
+- `2022-12-01..2022-12-05: 2022-11-30 00z f029: error: Wrong message length`
+- `2022-12-01..2022-12-05: 2022-11-30 00z f031: error: Wrong message length`
+- `2022-12-01..2022-12-05: 2022-11-30 00z f033: error: Wrong message length`
+- `2022-12-01..2022-12-05: 2022-11-30 00z f035: error: Wrong message length`
+- `2022-12-01..2022-12-05: 2022-11-30 00z f036: error: Wrong message length`
+- `2022-12-01..2022-12-05: 2022-11-30 00z f038: error: Wrong message length`
 
-_Elapsed this run: 15.5 min_
+_Elapsed this run: 17.2 min_
