@@ -169,11 +169,21 @@ def main():
         "retain": retain.astype(int),
     })
 
-    cells["w_uniform"] = cells["retain"].astype(float)
-    # Province-area weight: pure share of the cell inside Shandong, so sea
-    # cells carry zero. Paired with w_uniform (which does include near-shore
-    # sea) these bracket the treatment of offshore wind.
-    cells["w_province"] = np.round(np.where(retain, in_prov, 0.0), 4)
+    # w_uniform: equal weight over cells that actually overlap Shandong.
+    #
+    # It deliberately does NOT give equal weight to every retained cell. The
+    # retained set includes 113 near-shore sea cells so that offshore wind is
+    # not dropped, but they are 31% of the retained set while offshore is a far
+    # smaller share of Shandong's wind fleet. An equal-weighted mean over all
+    # retained cells would hand open water ~31% of the province aggregate --
+    # marine wind is systematically stronger, so that inflates the level and
+    # damps the diurnal cycle. Offshore instead enters through w_wind, where
+    # its share is set by observed turbine locations (~15%), which is what the
+    # spec's instruction to keep those cells was actually protecting.
+    province_cell = in_prov > 0.01
+    cells["w_uniform"] = np.where(province_cell, 1.0, 0.0)
+    # Province-area weight: share of the cell inside Shandong.
+    cells["w_province"] = np.round(np.where(province_cell, in_prov, 0.0), 4)
 
     w_wind, w_solar, src = capacity_weights()
     if w_wind is None:
@@ -193,7 +203,17 @@ def main():
     out = DATA / "sd_grid_cells.csv"
     cells.to_csv(out, index=False)
 
-    print(f"wrote {out}  ({len(cells)} cells, {int(retain.sum())} retained)")
+    # Offshore exposure of each weighting -- the number to check before a run.
+    sea = cells["land_frac"].to_numpy() < 0.5
+    print("\n  sea-cell share of each weight vector "
+          "(land_frac < 0.5; offshore wind is a minority of Shandong's fleet):")
+    for col in ("w_uniform", "w_province", "w_wind", "w_solar"):
+        w = cells[col].to_numpy(dtype=float) * retain
+        tot = w.sum()
+        print(f"    {col:11s} {100 * w[sea].sum() / tot:5.1f}%   "
+              f"({int((w > 0).sum()):3d} cells carry weight)")
+
+    print(f"\nwrote {out}  ({len(cells)} cells, {int(retain.sum())} retained)")
     print(f"  land cells (land>=0.5): {int((land >= 0.5).sum())}")
     print(f"  in-province cells:      {int((in_prov > 0.01).sum())}")
     print(f"  offshore retained:      {int((offshore & (land < 0.5) & retain).sum())}")

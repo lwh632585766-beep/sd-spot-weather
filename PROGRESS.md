@@ -1,27 +1,24 @@
 # PROGRESS
 
-_Updated: 2026-08-25 04:15 UTC_
+_Updated: 2026-08-25 04:19 UTC_
 
 ## Coverage
 
-- Processed through: **2022-03-10**
-- Days in panel: **100**
-- Rows: **4,800** (expected 48 per day: 24 hours x 2 vintages)
-- Date range: 2021-12-01 .. 2022-03-10
+- Processed through: **2021-11-30**
+- Days in panel: **0**
+- Rows: **0** (expected 48 per day: 24 hours x 2 vintages)
 
-## Value ranges
+## Spatial weighting in force
 
-| column | mean | sd | min | max | n_missing |
-|---|---|---|---|---|---|
-| wind10_fc | 3.997 | 1.569 | 1.076 | 10.788 | 0 |
-| wind10_an | 4.013 | 1.569 | 1.379 | 10.678 | 0 |
-| e_wind10 | -0.016 | 0.239 | -1.832 | 1.045 | 0 |
-| wind100_fc | 5.430 | 2.210 | 1.239 | 14.739 | 0 |
-| wind100_an | 5.450 | 2.211 | 1.502 | 14.314 | 0 |
-| e_wind100 | -0.020 | 0.355 | -2.441 | 1.699 | 0 |
-| dswrf_fc | 137.979 | 206.846 | -0.009 | 801.330 | 0 |
-| dswrf_an | 138.320 | 207.384 | -0.007 | 798.920 | 0 |
-| e_dswrf | -0.342 | 9.743 | -90.677 | 105.876 | 0 |
+Cells: 594 in the bbox, 392 retained (271 land, 121 sea).
+Capacity source: `wind=OSM/Dunnett turbine counts; solar=Kruitwagen PV`.
+
+| weight | used by | sea-cell share | cells with weight |
+|---|---|---|---|
+| `w_uniform` | unweighted columns | 13.1% | 312 |
+| `w_province` | (reference) | 4.6% | 312 |
+| `w_wind` | `wind*_cw` | 15.2% | 71 |
+| `w_solar` | `dswrf*_cw` | 1.2% | 194 |
 
 ## Spec deviations
 
@@ -43,12 +40,41 @@ _Updated: 2026-08-25 04:15 UTC_
    record at all, so the hour ending at a cycle time is de-accumulated from the
    previous cycle's f005/f006.
 
-3. **Near-shore bounded to 0.5 deg (~50 km) from the province boundary.** The
-   spec says keep sea cells east of 119.5 between lat 35-38.5. Taken literally
-   that retains 159 sea cells reaching 166 km into the Yellow Sea, where wind
-   is systematically stronger, which would dominate the province mean. Bounding
-   to 50 km keeps 113 cells, covering Shandong's offshore wind sites. The cell
-   file exports `dist_to_province` so this can be re-cut without re-running.
+3. **Near-shore bounded to 0.5 deg, and offshore enters through the capacity
+   weight rather than the unweighted mean.** The spec says keep sea cells east
+   of 119.5 between lat 35-38.5. Taken literally that retains 159 sea cells
+   reaching 166 km into the Yellow Sea.
+
+   The bound is set from the offshore fleet itself: in the COWT-SAR inventory
+   Shandong's 1,187 offshore turbines sit a median 23 km from shore, p95 52 km.
+   A 0.5 deg (~56 km) buffer covers 95.8% of them and retains 113 sea cells,
+   against 67.1% coverage at 0.25 deg and 100% at 0.75 deg -- 0.5 deg is the
+   knee of that curve, not a round number.
+
+   Those 113 cells are still 31% of the retained set, while offshore is a much
+   smaller share of Shandong's wind fleet. So `w_uniform` weights only the 312
+   cells that actually overlap the province, not every retained cell: giving
+   open water 31% of the unweighted aggregate would inflate its level (marine
+   wind is stronger) and damp its diurnal cycle. Offshore instead enters
+   through `w_wind`, where its share is set by observed turbine locations.
+   Measured sea-cell share of each weight vector:
+
+   | weight | sea share | cells with weight |
+   |---|---|---|
+   | `w_uniform` | 13.1% | 312 |
+   | `w_province` | 4.6% | 312 |
+   | `w_wind` | 15.2% | 71 |
+   | `w_solar` | 1.2% | 194 |
+
+   Effect on the level: over three sample days the old all-retained-equal mean
+   sat 6.3% below the capacity-weighted 10 m wind and the province-equal mean
+   sits 14.5% below it. The wider gap is the more honest one -- the old figure
+   was close to the capacity-weighted level because open ocean happened to pull
+   it up, not because it tracked where turbines are. The unweighted column is
+   now a clean province-geography mean and the `_cw` column reflects siting;
+   the gap between them is informative rather than an artefact.
+
+   `dist_to_province` and `land_frac` are exported so any of this can be re-cut.
 
 4. **Capacity weights come from substitute sources, one per technology.**
    The spec's Global Energy Monitor trackers are not obtainable here:
@@ -91,4 +117,4 @@ _Updated: 2026-08-25 04:15 UTC_
 
 - none: every GFS object requested so far decoded cleanly
 
-_Elapsed this run: 4.4 min_
+_Elapsed this run: 0.0 min_

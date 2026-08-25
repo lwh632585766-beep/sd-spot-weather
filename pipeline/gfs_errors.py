@@ -247,7 +247,10 @@ def hourly_dswrf(store, run_day, cyc, fhr):
     prev = field(store, (run_day, cyc, fhr - 1), "dswrf")
     if prev is None:
         return None
-    return lead * a - (lead - 1) * prev
+    # De-accumulation amplifies float32 storage noise by up to L (=6), which at
+    # night turns two ~1e-3 values into a ~1e-2 negative. Shortwave flux cannot
+    # be negative, so clamp; the magnitude is far below any real signal.
+    return np.maximum(lead * a - (lead - 1) * prev, 0.0)
 
 
 def analysis_hour(store, t_utc):
@@ -366,12 +369,41 @@ DEVIATIONS = """\
    record at all, so the hour ending at a cycle time is de-accumulated from the
    previous cycle's f005/f006.
 
-3. **Near-shore bounded to 0.5 deg (~50 km) from the province boundary.** The
-   spec says keep sea cells east of 119.5 between lat 35-38.5. Taken literally
-   that retains 159 sea cells reaching 166 km into the Yellow Sea, where wind
-   is systematically stronger, which would dominate the province mean. Bounding
-   to 50 km keeps 113 cells, covering Shandong's offshore wind sites. The cell
-   file exports `dist_to_province` so this can be re-cut without re-running.
+3. **Near-shore bounded to 0.5 deg, and offshore enters through the capacity
+   weight rather than the unweighted mean.** The spec says keep sea cells east
+   of 119.5 between lat 35-38.5. Taken literally that retains 159 sea cells
+   reaching 166 km into the Yellow Sea.
+
+   The bound is set from the offshore fleet itself: in the COWT-SAR inventory
+   Shandong's 1,187 offshore turbines sit a median 23 km from shore, p95 52 km.
+   A 0.5 deg (~56 km) buffer covers 95.8% of them and retains 113 sea cells,
+   against 67.1% coverage at 0.25 deg and 100% at 0.75 deg -- 0.5 deg is the
+   knee of that curve, not a round number.
+
+   Those 113 cells are still 31% of the retained set, while offshore is a much
+   smaller share of Shandong's wind fleet. So `w_uniform` weights only the 312
+   cells that actually overlap the province, not every retained cell: giving
+   open water 31% of the unweighted aggregate would inflate its level (marine
+   wind is stronger) and damp its diurnal cycle. Offshore instead enters
+   through `w_wind`, where its share is set by observed turbine locations.
+   Measured sea-cell share of each weight vector:
+
+   | weight | sea share | cells with weight |
+   |---|---|---|
+   | `w_uniform` | 13.1% | 312 |
+   | `w_province` | 4.6% | 312 |
+   | `w_wind` | 15.2% | 71 |
+   | `w_solar` | 1.2% | 194 |
+
+   Effect on the level: over three sample days the old all-retained-equal mean
+   sat 6.3% below the capacity-weighted 10 m wind and the province-equal mean
+   sits 14.5% below it. The wider gap is the more honest one -- the old figure
+   was close to the capacity-weighted level because open ocean happened to pull
+   it up, not because it tracked where turbines are. The unweighted column is
+   now a clean province-geography mean and the `_cw` column reflects siting;
+   the gap between them is informative rather than an artefact.
+
+   `dist_to_province` and `land_frac` are exported so any of this can be re-cut.
 
 4. **Capacity weights come from substitute sources, one per technology.**
    The spec's Global Energy Monitor trackers are not obtainable here:
@@ -442,6 +474,34 @@ def write_progress(df: pd.DataFrame, anomalies: list[str], elapsed: float,
                 f"| {c} | {s.mean():.3f} | {s.std():.3f} | {s.min():.3f} "
                 f"| {s.max():.3f} | {int(s.isna().sum())} |"
             )
+    # --- weighting actually in force, read back from the cell file ---------
+    try:
+        cells = pd.read_csv(CELLS)
+        keep = cells["retain"].to_numpy() == 1
+        sea = cells["land_frac"].to_numpy() < 0.5
+        lines += [
+            "",
+            "## Spatial weighting in force",
+            "",
+            f"Cells: {len(cells)} in the bbox, {int(keep.sum())} retained "
+            f"({int((keep & ~sea).sum())} land, {int((keep & sea).sum())} sea).",
+            f"Capacity source: `{cells['cap_source'].iat[0]}`.",
+            "",
+            "| weight | used by | sea-cell share | cells with weight |",
+            "|---|---|---|---|",
+        ]
+        used = {"w_uniform": "unweighted columns", "w_province": "(reference)",
+                "w_wind": "`wind*_cw`", "w_solar": "`dswrf*_cw`"}
+        for col, who in used.items():
+            w = cells[col].to_numpy(dtype=float) * keep
+            tot = w.sum()
+            if tot <= 0:
+                continue
+            lines.append(f"| `{col}` | {who} | {100 * w[sea].sum() / tot:.1f}% "
+                         f"| {int((w > 0).sum())} |")
+    except Exception as exc:                                      # noqa: BLE001
+        lines += ["", f"_(weighting summary unavailable: {exc})_"]
+
     lines += ["", "## Spec deviations", "", DEVIATIONS]
     lines += ["## Anomalies", ""]
     lines += ([f"- `{a}`" for a in anomalies[-200:]]
