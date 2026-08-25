@@ -319,13 +319,26 @@ def git(*args, check=True):
                           capture_output=True, text=True)
 
 
+# Authorisation failures are not transient: retrying a 403 just burns time.
+_FATAL_PUSH = ("403", "doesn't have GitHub access", "Permission denied",
+               "Authentication failed")
+
+
 def push_with_retry(branch: str, tries: int = 5) -> bool:
+    """Push with backoff on *network* errors only. Returns False if blocked."""
     delay = 2
     for attempt in range(tries):
         r = git("push", "-u", "origin", branch, check=False)
         if r.returncode == 0:
             return True
-        sys.stderr.write(f"push failed (try {attempt+1}): {r.stderr.strip()[:300]}\n")
+        err = (r.stderr or "").strip()
+        if any(tok in err for tok in _FATAL_PUSH):
+            sys.stderr.write(
+                "push rejected (not retryable); committing locally only: "
+                f"{err.splitlines()[0][:200]}\n"
+            )
+            return False
+        sys.stderr.write(f"push failed (try {attempt+1}): {err[:300]}\n")
         if attempt < tries - 1:
             time.sleep(delay)
             delay *= 2
