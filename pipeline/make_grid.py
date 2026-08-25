@@ -75,61 +75,66 @@ def cell_boxes():
     ]
 
 
-def capacity_weights(cells: pd.DataFrame, capfile: Path | None):
-    """Sum plant capacity (MW) into cells from an inventory CSV, if provided.
+# Capacity inventories, one peer-reviewed source per technology.
+#
+# Deliberately NOT combined with the offshore-specific inventories (DeepOWT,
+# COWT-SAR) that are also in static/. Those are offshore-only detections with
+# their own methodology; splicing them onto an OSM onshore count implies a
+# ~22% offshore share of Shandong wind, several times the real share over this
+# sample. Mixing detection methodologies produces an on/offshore ratio that
+# cannot be defended, so each technology gets a single consistent source and
+# the limitation is documented instead.
+WIND_SRC = STATIC / "dunnett_osm_wind_shandong.csv"     # OSM turbine clusters
+SOLAR_SRC = STATIC / "kruitwagen_pv_shandong.csv"       # satellite PV inventory
 
-    The CSV must have latitude/longitude/capacity columns and a technology
-    column distinguishing wind from solar. Returns (w_wind, w_solar, source).
-    """
-    if capfile is None or not capfile.exists():
-        return None, None, None
+# Dunnett/OSM gives turbine counts, not MW. Chinese onshore turbines
+# commissioned over this sample average roughly 2 MW; the constant only sets
+# the units of an internally-normalised weight vector, so it cancels out.
+MW_PER_TURBINE = 2.0
 
-    df = pd.read_csv(capfile)
-    cols = {c.lower(): c for c in df.columns}
 
-    def pick(*names):
-        for n in names:
-            if n in cols:
-                return cols[n]
-        return None
-
-    c_lat = pick("latitude", "lat", "y")
-    c_lon = pick("longitude", "lon", "lng", "x")
-    c_cap = pick("capacity_mw", "capacity (mw)", "capacity", "mw")
-    c_tec = pick("technology", "type", "fuel", "source", "primary_fuel")
-    if not all([c_lat, c_lon, c_cap, c_tec]):
-        raise SystemExit(f"{capfile}: need lat/lon/capacity/technology columns, "
-                         f"found {list(df.columns)}")
-
-    df = df[[c_lat, c_lon, c_cap, c_tec]].copy()
-    df.columns = ["lat", "lon", "cap", "tech"]
-    df = df.dropna(subset=["lat", "lon", "cap"])
-    df["tech"] = df["tech"].astype(str).str.lower()
-
-    half = G.DEG / 2.0
-    # snap each plant to its grid cell
-    j = np.rint((G.LAT_MAX - df["lat"].to_numpy()) / G.DEG).astype(int)
-    i = np.rint((df["lon"].to_numpy() - G.LON_MIN) / G.DEG).astype(int)
+def _cell_of(lat, lon):
+    """Snap points to flat cell ids; -1 where outside the bbox."""
+    j = np.rint((G.LAT_MAX - np.asarray(lat, dtype=float)) / G.DEG).astype(int)
+    i = np.rint((np.asarray(lon, dtype=float) - G.LON_MIN) / G.DEG).astype(int)
     ok = (j >= 0) & (j < G.NLAT) & (i >= 0) & (i < G.NLON)
-    cid = j * G.NLON + i
+    return np.where(ok, j * G.NLON + i, -1)
 
-    w_wind = np.zeros(G.NCELL)
-    w_solar = np.zeros(G.NCELL)
-    for k in np.nonzero(ok)[0]:
-        tech, cap = df["tech"].iat[k], float(df["cap"].iat[k])
-        if "wind" in tech:
-            w_wind[cid[k]] += cap
-        elif "solar" in tech or "pv" in tech:
-            w_solar[cid[k]] += cap
-    if w_wind.sum() == 0 and w_solar.sum() == 0:
+
+def _accumulate(lat, lon, mw) -> np.ndarray:
+    w = np.zeros(G.NCELL)
+    cid = _cell_of(lat, lon)
+    mw = np.asarray(mw, dtype=float)
+    good = (cid >= 0) & np.isfinite(mw)
+    np.add.at(w, cid[good], mw[good])
+    return w
+
+
+def capacity_weights():
+    """Build (w_wind, w_solar, source_label) from the bundled inventories."""
+    if not (WIND_SRC.exists() and SOLAR_SRC.exists()):
         return None, None, None
-    return w_wind, w_solar, capfile.name
+
+    wind = pd.read_csv(WIND_SRC)
+    w_wind = _accumulate(wind["latitude"], wind["longitude"],
+                         wind["count"] * MW_PER_TURBINE)
+
+    solar = pd.read_csv(SOLAR_SRC)
+    # The bbox overlaps Hebei/Henan/Jiangsu; Kruitwagen carries a province code,
+    # so restrict solar to Shandong proper (CN-37) rather than the whole box.
+    if "iso_3166_2" in solar.columns:
+        solar = solar[solar["iso_3166_2"].astype(str).str.upper() == "CN-37"]
+    w_solar = _accumulate(solar["latitude"], solar["longitude"],
+                          solar["capacity_mw"])
+
+    if w_wind.sum() <= 0 or w_solar.sum() <= 0:
+        return None, None, None
+    return w_wind, w_solar, "wind=OSM/Dunnett turbine counts; solar=Kruitwagen PV"
 
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--capacity", type=Path, default=None,
-                    help="optional plant inventory CSV for w_wind/w_solar")
+
     ap.add_argument("--offshore-buffer", type=float, default=OFFSHORE_BUFFER_DEG,
                     help="max degrees from the province boundary for sea cells")
     args = ap.parse_args()
@@ -170,7 +175,7 @@ def main():
     # sea) these bracket the treatment of offshore wind.
     cells["w_province"] = np.round(np.where(retain, in_prov, 0.0), 4)
 
-    w_wind, w_solar, src = capacity_weights(cells, args.capacity)
+    w_wind, w_solar, src = capacity_weights()
     if w_wind is None:
         cells["w_wind"] = cells["w_province"]
         cells["w_solar"] = cells["w_province"]
@@ -179,6 +184,10 @@ def main():
         cells["w_wind"] = np.round(w_wind * retain, 4)
         cells["w_solar"] = np.round(w_solar * retain, 4)
         cells["cap_source"] = src
+        print(f"  wind  weight: {w_wind[retain].sum():8.0f} MW-equiv over "
+              f"{int((w_wind * retain > 0).sum())} cells")
+        print(f"  solar weight: {w_solar[retain].sum():8.0f} MW over "
+              f"{int((w_solar * retain > 0).sum())} cells")
 
     DATA.mkdir(exist_ok=True)
     out = DATA / "sd_grid_cells.csv"

@@ -13,3 +13,4 @@ dl_*.log
 __pycache__/
 *.pyc
 .ipynb_checkpoints/
+pipeline/static/wri_global_power_plant_database.csv

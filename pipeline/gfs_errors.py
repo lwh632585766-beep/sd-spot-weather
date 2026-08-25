@@ -360,11 +360,34 @@ DEVIATIONS = """\
    to 50 km keeps 113 cells, covering Shandong's offshore wind sites. The cell
    file exports `dist_to_province` so this can be re-cut without re-running.
 
-4. **Capacity weights.** globalenergymonitor.org serves only an HTML landing
-   page behind a form, and OpenStreetMap Overpass is blocked by the
-   environment's network policy (curl code 000). Per CLAUDE.md this is
-   non-blocking. See the `cap_source` column of `data/sd_grid_cells.csv` for
-   what the `_cw` columns are actually weighted by.
+4. **Capacity weights come from substitute sources, one per technology.**
+   The spec's Global Energy Monitor trackers are not obtainable here:
+   globalenergymonitor.org serves an HTML landing page behind a form, GEM's
+   asset API exposes no wind or solar asset classes, and OSM Overpass is
+   blocked by the network policy (curl code 000). Per CLAUDE.md that is
+   non-blocking, and rather than fall back to unweighted the `_cw` columns use:
+   - `w_solar`: Kruitwagen et al. (2021) satellite PV inventory, restricted to
+     `iso_3166_2 == CN-37`. 8,354 MW over 194 cells.
+   - `w_wind`: Dunnett et al. (2020) OSM turbine clusters, turbine count x
+     2 MW. 5,660 MW-equivalent over 71 cells.
+
+   Both are level-incomplete: Kruitwagen is a mid-2018 snapshot of
+   utility-scale PV and misses Shandong's large post-2018 distributed rooftop
+   build-out; the OSM wind inventory carries roughly 6 GW against a real
+   Shandong onshore fleet of ~20 GW. They are used as *spatial* weights, where
+   only the relative distribution matters, and they are far from proportional
+   to area (correlation with `w_province` is 0.14 for wind, 0.28 for solar), so
+   the `_cw` columns are not a relabelled unweighted mean.
+
+   The offshore-only inventories in `pipeline/static/` (DeepOWT, COWT-SAR) are
+   deliberately NOT spliced in. Adding DeepOWT's 1.86 GW to an OSM onshore
+   count implies a ~22% offshore share of Shandong wind, several times the real
+   share over this sample, because the two inventories have very different
+   detection completeness. They are committed so the choice can be revisited.
+
+   Re-deriving weights does NOT require re-running the panel end to end only if
+   the cell aggregation changes -- a different weight vector needs a full
+   re-run, since the CSV stores province aggregates rather than cell values.
 
 5. **Error magnitudes are understated relative to true forecast error.** The
    "actual" is itself a GFS short-lead forecast, so it shares initial
