@@ -1,0 +1,15 @@
+# Raw GRIB is disposable and must never be committed (CLAUDE.md hard rule).
+*.grib
+*.grib2
+*.grb
+*.grb2
+*.idx
+pipeline/static/*.zip
+# Bulk source inventories used only to derive cell weights; the derived
+# weights live in data/sd_grid_cells.csv, which is what the paper needs.
+*.zip
+dl_*.log
+
+__pycache__/
+*.pyc
+.ipynb_checkpoints/

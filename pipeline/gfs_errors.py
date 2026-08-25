@@ -1,101 +1,513 @@
-"""Starter skeleton for the Shandong GFS forecast-error pipeline.
+#!/usr/bin/env python3
+"""Build the Shandong day-ahead weather forecast-error panel.
 
-STATUS: untested draft written outside the cloud environment — the cloud session
-should treat WEATHER_SPEC.md as the contract, use this as a head start, and fix
-freely (note deviations in PROGRESS.md). The .idx parsing + Range-request pattern
-below is the load-bearing trick: never download whole GRIB files.
+Produces ``data/sd_weather_errors.csv``: one row per
+(date_cst, hour_cst, vintage) with forecast, analysis ("actual") and
+forecast-minus-actual values for 10 m wind, 100 m wind and surface shortwave
+radiation, in both unweighted and capacity-weighted province aggregates.
 
-Deps: requests, xarray, cfgrib, eccodes (pip wheels), pandas, numpy.
-Alternative: herbie-data does the idx subsetting natively; use it if it installs
-cleanly (python >= 3.10) — then only the aggregation/loop logic here matters.
+Design notes that matter (see PROGRESS.md for the full deviation list):
+
+* **Timing.** Beijing time is UTC+8, so delivery day D hours 00-23 CST span
+  UTC (D-1) 16:00 -> D 15:00. The primary day-ahead vintage is the 00z run of
+  D-1 (forecast hours f016-f039); the robustness vintage is the 12z run of D-1
+  (f004-f027).
+
+* **DSWRF is a bucket average, not an instantaneous field.** GFS reports it as
+  a mean since the last 6-hourly bucket boundary ("12-16 hour ave fcst"), so a
+  raw read at f016 gives a 4-hour mean, not the 15->16 hour value. Every
+  radiation value here is de-accumulated to a true hourly mean:
+  ``hourly(f) = L*A(f) - (L-1)*A(f-1)`` with ``L = f - 6*floor((f-1)/6)``.
+
+* **Actuals.** Instead of 6-hourly f000 analyses interpolated to hourly (which
+  would smooth away exactly the hourly ramps the paper is about), each hour
+  uses the shortest available lead from its covering cycle: lead 0-5 of the
+  most recent 00/06/12/18z cycle. Lead 0 is the true analysis; leads 1-5 are
+  1-5 hour forecasts. Radiation has no f000 field at all, so the hour ending at
+  a cycle time is de-accumulated from the previous cycle's f005/f006.
+
+Raw GRIB is never written to the repo and never kept: fields are range-fetched
+into memory, decoded, subset to 594 grid cells, and dropped.
 """
-import io
-import os
-import re
-import time
+
+from __future__ import annotations
+
+import argparse
 import datetime as dt
+import os
+import subprocess
+import sys
+import time
+from collections import defaultdict
+from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 from pathlib import Path
 
-import requests
+import numpy as np
 import pandas as pd
 
-BUCKET = "https://noaa-gfs-bdp-pds.s3.amazonaws.com"
-BBOX = dict(lat_min=34.25, lat_max=38.50, lon_min=114.75, lon_max=122.75)
-WANTED = [  # (idx-var, idx-level) exactly as they appear in .idx lines
-    ("UGRD", "10 m above ground"), ("VGRD", "10 m above ground"),
-    ("UGRD", "100 m above ground"), ("VGRD", "100 m above ground"),
-    ("DSWRF", "surface"),
+import gfslib as G
+
+ROOT = Path(__file__).resolve().parent.parent
+DATA = ROOT / "data"
+CSV = DATA / "sd_weather_errors.csv"
+CELLS = DATA / "sd_grid_cells.csv"
+PROGRESS = ROOT / "PROGRESS.md"
+
+CST = dt.timezone(dt.timedelta(hours=8))
+UTC = dt.timezone.utc
+
+START = dt.date(2021, 12, 1)
+VINTAGES = (("d1_00z", 0), ("d1_12z", 12))
+
+COLUMNS = [
+    "date_cst", "hour_cst", "vintage",
+    "wind10_fc", "wind100_fc", "dswrf_fc",
+    "wind10_an", "wind100_an", "dswrf_an",
+    "e_wind10", "e_wind100", "e_dswrf",
+    "wind10_fc_cw", "wind100_fc_cw", "dswrf_fc_cw",
+    "wind10_an_cw", "wind100_an_cw", "dswrf_an_cw",
+    "e_wind10_cw", "e_wind100_cw", "e_dswrf_cw",
 ]
-OUT = Path(__file__).resolve().parent.parent / "data"
-CSV = OUT / "sd_weather_errors.csv"
+
+WIND = "wind"
+DSWRF = "dswrf"
 
 
-def grib_url(day: dt.date, cycle: int, fhr: int) -> str:
-    return (f"{BUCKET}/gfs.{day:%Y%m%d}/{cycle:02d}/atmos/"
-            f"gfs.t{cycle:02d}z.pgrb2.0p25.f{fhr:03d}")
+# ---------------------------------------------------------------------------
+# Timing helpers
+# ---------------------------------------------------------------------------
+def utc_at(date_cst: dt.date, hour_cst: int) -> dt.datetime:
+    """UTC instant (naive) of a Beijing-time calendar hour."""
+    local = dt.datetime(date_cst.year, date_cst.month, date_cst.day,
+                        hour_cst, tzinfo=CST)
+    return local.astimezone(UTC).replace(tzinfo=None)
 
 
-def fetch_fields(day: dt.date, cycle: int, fhr: int, retries: int = 3) -> bytes | None:
-    """Fetch only WANTED fields of one GRIB file via .idx byte ranges; returns
-    concatenated GRIB messages (cfgrib can read the concatenation)."""
-    url = grib_url(day, cycle, fhr)
-    for a in range(retries):
-        try:
-            idx = requests.get(url + ".idx", timeout=30)
-            if idx.status_code == 404:
-                return None
-            idx.raise_for_status()
-            lines = idx.text.strip().split("\n")
-            # idx line: "N:byte_start:d=YYYYMMDDCC:VAR:LEVEL:fcst spec:"
-            starts = [int(l.split(":")[1]) for l in lines]
-            chunks = []
-            for i, l in enumerate(lines):
-                p = l.split(":")
-                if (p[3], p[4]) in WANTED:
-                    lo = starts[i]
-                    hi = (starts[i + 1] - 1) if i + 1 < len(lines) else ""
-                    r = requests.get(url, headers={"Range": f"bytes={lo}-{hi}"},
-                                     timeout=60)
-                    r.raise_for_status()
-                    chunks.append(r.content)
-            return b"".join(chunks)
-        except Exception:
-            if a == retries - 1:
-                raise
-            time.sleep(5 * (a + 1))
+def bucket_start(fhr: int) -> int:
+    """First hour of the 6-hourly averaging bucket that forecast hour f sits in.
+
+    f=13..18 -> 12,  f=19..24 -> 18,  f=6 -> 0,  f=7 -> 6.
+    """
+    if fhr < 1:
+        raise ValueError(f"no averaging bucket for forecast hour {fhr}")
+    return 6 * ((fhr - 1) // 6)
 
 
-def decode_and_aggregate(grib_bytes: bytes, weights=None) -> dict:
-    """Decode concatenated GRIB messages, subset bbox, return province aggregates.
-    Implement with cfgrib:  xr.open_dataset(io.BytesIO?) — cfgrib needs a file path,
-    so write to a NamedTemporaryFile first. Compute wind speed per cell BEFORE
-    averaging. Return dict: wind10, wind100, dswrf (+ *_cw if weights given)."""
-    raise NotImplementedError  # cloud session: implement per WEATHER_SPEC.md
+def covering_cycle(t_utc: dt.datetime) -> tuple[dt.datetime, int]:
+    """Most recent 00/06/12/18z cycle at or before ``t_utc``, and the lead."""
+    cyc = t_utc.replace(hour=(t_utc.hour // 6) * 6, minute=0, second=0,
+                        microsecond=0)
+    return cyc, int((t_utc - cyc).total_seconds() // 3600)
 
 
-def hours_for_delivery_day(d: dt.date):
-    """Yield (vintage, run_day, cycle, fhr, hour_cst) for delivery day d per the
-    spec's timing convention: d-1 00z f016..f039 and d-1 12z f004..f027 map to
-    CST hours 0..23 of day d."""
-    prev = d - dt.timedelta(days=1)
-    for h in range(24):
-        yield ("d1_00z", prev, 0, 16 + h, h)
-        yield ("d1_12z", prev, 12, 4 + h, h)
+# ---------------------------------------------------------------------------
+# What each delivery day needs from the bucket
+# ---------------------------------------------------------------------------
+def plan_day(day: dt.date) -> dict[tuple[dt.date, int, int], set[str]]:
+    """Map (run_date, cycle, fhr) -> which field groups that object must supply."""
+    need: dict[tuple[dt.date, int, int], set[str]] = defaultdict(set)
+    run_day = day - dt.timedelta(days=1)
+
+    # --- forecast vintages -------------------------------------------------
+    for _, cyc in VINTAGES:
+        run_dt = dt.datetime(run_day.year, run_day.month, run_day.day, cyc)
+        for hour in range(24):
+            fhr = int((utc_at(day, hour) - run_dt).total_seconds() // 3600)
+            need[(run_day, cyc, fhr)] |= {WIND, DSWRF}
+            lead = fhr - bucket_start(fhr)
+            if lead > 1:                       # need previous step to de-accumulate
+                need[(run_day, cyc, fhr - 1)] |= {DSWRF}
+
+    # --- analysis (shortest-lead) series -----------------------------------
+    for hour in range(24):
+        t = utc_at(day, hour)
+        cyc_dt, lead = covering_cycle(t)
+        need[(cyc_dt.date(), cyc_dt.hour, lead)] |= {WIND}
+        if lead >= 1:
+            need[(cyc_dt.date(), cyc_dt.hour, lead)] |= {DSWRF}
+            if lead > 1:
+                need[(cyc_dt.date(), cyc_dt.hour, lead - 1)] |= {DSWRF}
+        else:
+            prev = cyc_dt - dt.timedelta(hours=6)
+            need[(prev.date(), prev.hour, 6)] |= {DSWRF}
+            need[(prev.date(), prev.hour, 5)] |= {DSWRF}
+    return need
 
 
+# ---------------------------------------------------------------------------
+# Fetch + decode
+# ---------------------------------------------------------------------------
+def _load_one(item):
+    (run_day, cyc, fhr), groups = item
+    keys: list[tuple[str, str]] = []
+    if WIND in groups:
+        keys += list(G.WIND_KEYS)
+    if DSWRF in groups:
+        keys += list(G.DSWRF_KEYS)
+    try:
+        vals, _steps = G.get_decoded(run_day, cyc, fhr, keys)
+        return (run_day, cyc, fhr), vals, None
+    except G.MissingObject:
+        return (run_day, cyc, fhr), {}, "missing"
+    except Exception as exc:                                  # noqa: BLE001
+        return (run_day, cyc, fhr), {}, f"error: {exc}"
+
+
+def fetch_all(need, threads: int):
+    store, problems = {}, {}
+    with ThreadPoolExecutor(threads) as ex:
+        for key, vals, err in ex.map(_load_one, list(need.items())):
+            store[key] = vals
+            if err:
+                problems[key] = err
+    return store, problems
+
+
+# ---------------------------------------------------------------------------
+# Worker: one contiguous block of delivery days, run in its own process
+# ---------------------------------------------------------------------------
+_W: "Weights | None" = None
+
+
+def _init_worker():
+    """Load the weight vectors once per worker process."""
+    global _W
+    _W = Weights(pd.read_csv(CELLS))
+
+
+def process_block(job):
+    """Fetch, decode and reduce one block of days. Returns (rows, anomalies)."""
+    days, threads = job
+    need: dict = defaultdict(set)
+    for d in days:
+        for k, v in plan_day(d).items():
+            need[k] |= v
+
+    store, problems = fetch_all(need, threads)
+    anomalies = [
+        f"{k[0]} {k[1]:02d}z f{k[2]:03d}: {err}"
+        for k, err in sorted(problems.items())
+    ]
+    rows = []
+    for d in days:
+        rows += build_rows(d, store, _W)
+    store.clear()
+    return rows, anomalies, len(need)
+
+
+# ---------------------------------------------------------------------------
+# Aggregation
+# ---------------------------------------------------------------------------
+class Weights:
+    """Normalised province weight vectors."""
+
+    def __init__(self, cells: pd.DataFrame):
+        def norm(col):
+            w = cells[col].to_numpy(dtype=np.float64)
+            w = np.where(cells["retain"].to_numpy() == 1, w, 0.0)
+            total = w.sum()
+            if total <= 0:
+                raise SystemExit(f"weight column {col!r} sums to zero")
+            return w / total
+
+        self.uniform = norm("w_uniform")
+        self.wind = norm("w_wind")
+        self.solar = norm("w_solar")
+
+    @staticmethod
+    def apply(x: np.ndarray | None, w: np.ndarray) -> float:
+        if x is None:
+            return float("nan")
+        return float(np.dot(x, w))
+
+
+def field(store, key, name):
+    vals = store.get(key)
+    if not vals:
+        return None
+    return vals.get(name)
+
+
+def wind_pair(store, key, level):
+    u = field(store, key, f"u{level}")
+    v = field(store, key, f"v{level}")
+    if u is None or v is None:
+        return None
+    return G.wind_speed(u, v)
+
+
+def hourly_dswrf(store, run_day, cyc, fhr):
+    """De-accumulate GFS bucket-mean DSWRF to the true mean over (fhr-1, fhr]."""
+    a = field(store, (run_day, cyc, fhr), "dswrf")
+    if a is None:
+        return None
+    lead = fhr - bucket_start(fhr)
+    if lead <= 1:
+        return a
+    prev = field(store, (run_day, cyc, fhr - 1), "dswrf")
+    if prev is None:
+        return None
+    return lead * a - (lead - 1) * prev
+
+
+def analysis_hour(store, t_utc):
+    """(wind10, wind100, dswrf) cell arrays for the hour ending at ``t_utc``."""
+    cyc_dt, lead = covering_cycle(t_utc)
+    key = (cyc_dt.date(), cyc_dt.hour, lead)
+    w10 = wind_pair(store, key, 10)
+    w100 = wind_pair(store, key, 100)
+    if lead >= 1:
+        rad = hourly_dswrf(store, cyc_dt.date(), cyc_dt.hour, lead)
+    else:
+        prev = cyc_dt - dt.timedelta(hours=6)
+        rad = hourly_dswrf(store, prev.date(), prev.hour, 6)
+    return w10, w100, rad
+
+
+# ---------------------------------------------------------------------------
+# Row assembly
+# ---------------------------------------------------------------------------
+def build_rows(day: dt.date, store, W: Weights):
+    rows = []
+    run_day = day - dt.timedelta(days=1)
+
+    # analysis is identical across vintages -- compute once per hour
+    an_cache = {}
+    for hour in range(24):
+        an_cache[hour] = analysis_hour(store, utc_at(day, hour))
+
+    for vintage, cyc in VINTAGES:
+        run_dt = dt.datetime(run_day.year, run_day.month, run_day.day, cyc)
+        for hour in range(24):
+            fhr = int((utc_at(day, hour) - run_dt).total_seconds() // 3600)
+            key = (run_day, cyc, fhr)
+            fc10 = wind_pair(store, key, 10)
+            fc100 = wind_pair(store, key, 100)
+            fcrad = hourly_dswrf(store, run_day, cyc, fhr)
+            an10, an100, anrad = an_cache[hour]
+
+            row = {"date_cst": day.isoformat(), "hour_cst": hour,
+                   "vintage": vintage}
+            # "" = unweighted mean over retained cells;
+            # "_cw" = capacity-weighted (wind weights for wind, solar for DSWRF)
+            for suffix, ww, ws in (("", W.uniform, W.uniform),
+                                   ("_cw", W.wind, W.solar)):
+                f10 = W.apply(fc10, ww)
+                f100 = W.apply(fc100, ww)
+                frd = W.apply(fcrad, ws)
+                a10 = W.apply(an10, ww)
+                a100 = W.apply(an100, ww)
+                ard = W.apply(anrad, ws)
+                row[f"wind10_fc{suffix}"] = f10
+                row[f"wind100_fc{suffix}"] = f100
+                row[f"dswrf_fc{suffix}"] = frd
+                row[f"wind10_an{suffix}"] = a10
+                row[f"wind100_an{suffix}"] = a100
+                row[f"dswrf_an{suffix}"] = ard
+                row[f"e_wind10{suffix}"] = f10 - a10
+                row[f"e_wind100{suffix}"] = f100 - a100
+                row[f"e_dswrf{suffix}"] = frd - ard
+            rows.append(row)
+    return rows
+
+
+# ---------------------------------------------------------------------------
+# Checkpointing
+# ---------------------------------------------------------------------------
+def git(*args, check=True):
+    return subprocess.run(["git", *args], cwd=ROOT, check=check,
+                          capture_output=True, text=True)
+
+
+def push_with_retry(branch: str, tries: int = 5) -> bool:
+    delay = 2
+    for attempt in range(tries):
+        r = git("push", "-u", "origin", branch, check=False)
+        if r.returncode == 0:
+            return True
+        sys.stderr.write(f"push failed (try {attempt+1}): {r.stderr.strip()[:300]}\n")
+        if attempt < tries - 1:
+            time.sleep(delay)
+            delay *= 2
+    return False
+
+
+# Deviations from WEATHER_SPEC.md, re-emitted into PROGRESS.md on every
+# checkpoint (the file is regenerated each time, so this must live in code).
+DEVIATIONS = """\
+1. **DSWRF de-accumulated to true hourly means.** The spec treats DSWRF as a
+   readable per-step field and only flags the f000 gap. In fact GFS stores it
+   as a *mean since the last 6-hourly bucket boundary*: at f016 the record is
+   labelled `12-16 hour ave fcst`, a 4-hour mean. Reading it raw would smear
+   the diurnal shape (the f028 4-hour mean is 387 W/m2 where the true 11-12
+   CST hour is 524 W/m2). Every radiation value here is de-accumulated as
+   `hourly(f) = L*A(f) - (L-1)*A(f-1)`, `L = f - 6*floor((f-1)/6)`, which
+   costs one extra step per vintage (f015 for 00z, f003 for 12z).
+
+2. **Actuals use shortest-lead forecasts, not interpolated f000 analyses.**
+   The spec suggests 6-hourly f000 analyses interpolated to hourly. Linear
+   interpolation across a 6-hour gap removes exactly the hourly wind ramps the
+   paper studies. Instead each hour takes the shortest available lead from its
+   covering cycle (lead 0-5 of the most recent 00/06/12/18z run): lead 0 is the
+   true analysis, leads 1-5 are 1-5 hour forecasts. Radiation has no f000
+   record at all, so the hour ending at a cycle time is de-accumulated from the
+   previous cycle's f005/f006.
+
+3. **Near-shore bounded to 0.5 deg (~50 km) from the province boundary.** The
+   spec says keep sea cells east of 119.5 between lat 35-38.5. Taken literally
+   that retains 159 sea cells reaching 166 km into the Yellow Sea, where wind
+   is systematically stronger, which would dominate the province mean. Bounding
+   to 50 km keeps 113 cells, covering Shandong's offshore wind sites. The cell
+   file exports `dist_to_province` so this can be re-cut without re-running.
+
+4. **Capacity weights.** globalenergymonitor.org serves only an HTML landing
+   page behind a form, and OpenStreetMap Overpass is blocked by the
+   environment's network policy (curl code 000). Per CLAUDE.md this is
+   non-blocking. See the `cap_source` column of `data/sd_grid_cells.csv` for
+   what the `_cw` columns are actually weighted by.
+
+5. **Error magnitudes are understated relative to true forecast error.** The
+   "actual" is itself a GFS short-lead forecast, so it shares initial
+   conditions and model physics with the day-ahead forecast. These errors
+   measure the day-ahead-vs-near-analysis revision, not forecast-vs-observation
+   error. The exogenous surprise component is preserved, but levels are not
+   comparable to station-verified RMSE. ERA5 (needs a Copernicus CDS account)
+   remains the robustness option the spec notes.
+"""
+
+
+def write_progress(df: pd.DataFrame, anomalies: list[str], elapsed: float,
+                   done_through: dt.date):
+    n_days = df["date_cst"].nunique() if len(df) else 0
+    lines = [
+        "# PROGRESS",
+        "",
+        f"_Updated: {dt.datetime.now(UTC):%Y-%m-%d %H:%M UTC}_",
+        "",
+        "## Coverage",
+        "",
+        f"- Processed through: **{done_through.isoformat()}**",
+        f"- Days in panel: **{n_days}**",
+        f"- Rows: **{len(df):,}** (expected 48 per day: 24 hours x 2 vintages)",
+    ]
+    if len(df):
+        lines += [
+            f"- Date range: {df['date_cst'].min()} .. {df['date_cst'].max()}",
+            "",
+            "## Value ranges",
+            "",
+            "| column | mean | sd | min | max | n_missing |",
+            "|---|---|---|---|---|---|",
+        ]
+        for c in ["wind10_fc", "wind10_an", "e_wind10", "wind100_fc",
+                  "wind100_an", "e_wind100", "dswrf_fc", "dswrf_an", "e_dswrf"]:
+            s = df[c]
+            lines.append(
+                f"| {c} | {s.mean():.3f} | {s.std():.3f} | {s.min():.3f} "
+                f"| {s.max():.3f} | {int(s.isna().sum())} |"
+            )
+    lines += ["", "## Spec deviations", "", DEVIATIONS]
+    lines += ["## Anomalies", ""]
+    lines += ([f"- `{a}`" for a in anomalies[-200:]]
+              or ["- none: every GFS object requested so far decoded cleanly"])
+    if len(anomalies) > 200:
+        lines += [f"", f"_({len(anomalies)} total; showing last 200.)_"]
+    lines += ["", f"_Elapsed this run: {elapsed/60:.1f} min_", ""]
+    PROGRESS.write_text("\n".join(lines))
+
+
+# ---------------------------------------------------------------------------
+# Main loop
+# ---------------------------------------------------------------------------
 def main():
-    OUT.mkdir(exist_ok=True)
-    start = dt.date(2021, 12, 1)
-    if CSV.exists():
-        done = pd.read_csv(CSV, usecols=["date_cst"])
-        start = dt.date.fromisoformat(done["date_cst"].max()) + dt.timedelta(days=1)
-    today = dt.date.today()
-    d = start
-    while d < today:
-        # 1) forecasts for both vintages; 2) analyses (f000/f001 of covering cycles);
-        # 3) aggregate; 4) append rows; 5) every ~50 days: git commit+push.
-        ...
-        d += dt.timedelta(days=1)
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--start", type=dt.date.fromisoformat, default=None)
+    ap.add_argument("--end", type=dt.date.fromisoformat, default=None)
+    ap.add_argument("--block", type=int, default=5,
+                    help="delivery days fetched per batch")
+    ap.add_argument("--threads", type=int, default=16,
+                    help="concurrent range requests per worker process")
+    ap.add_argument("--workers", type=int, default=max(1, (os.cpu_count() or 2)),
+                    help="worker processes (decode is CPU-bound)")
+    ap.add_argument("--commit-every", type=int, default=50,
+                    help="commit + push after this many processed days")
+    ap.add_argument("--branch", default="claude/startup-check-weather-spec-c56s8w")
+    ap.add_argument("--no-git", action="store_true")
+    ap.add_argument("--out", type=Path, default=CSV)
+    args = ap.parse_args()
+
+    cells = pd.read_csv(CELLS)
+    W = Weights(cells)
+
+    existing = None
+    start = args.start or START
+    if args.out.exists():
+        existing = pd.read_csv(args.out)
+        if len(existing) and args.start is None:
+            last = dt.date.fromisoformat(str(existing["date_cst"].max()))
+            start = last + dt.timedelta(days=1)
+            print(f"resuming after {last}")
+
+    end = args.end or (dt.date.today() - dt.timedelta(days=1))
+    if start > end:
+        print(f"nothing to do: start {start} > end {end}")
+        return
+
+    all_days = [start + dt.timedelta(days=i) for i in range((end - start).days + 1)]
+    print(f"processing {len(all_days)} days: {start} .. {end}")
+
+    frames = [existing] if existing is not None and len(existing) else []
+    anomalies: list[str] = []
+    t0 = time.time()
+    since_commit = 0
+    done_through = start - dt.timedelta(days=1)
+
+    blocks = [all_days[i:i + args.block]
+              for i in range(0, len(all_days), args.block)]
+    jobs = [(b, args.threads) for b in blocks]
+    processed = 0
+
+    with ProcessPoolExecutor(args.workers, initializer=_init_worker) as pool:
+        for bi, (rows, block_anoms, n_obj) in enumerate(
+                pool.map(process_block, jobs)):
+            block = blocks[bi]
+            anomalies += [f"{block[0]}..{block[-1]}: {a}" for a in block_anoms]
+            frames.append(pd.DataFrame(rows, columns=COLUMNS))
+
+            done_through = block[-1]
+            since_commit += len(block)
+            processed += len(block)
+            elapsed = time.time() - t0
+            rate = elapsed / processed
+            eta = (len(all_days) - processed) * rate / 60
+            print(f"  {block[0]} .. {block[-1]}  {n_obj:4d} objs  "
+                  f"{rate:5.2f}s/day  eta {eta:6.1f} min"
+                  + (f"  [{len(block_anoms)} missing]" if block_anoms else ""),
+                  flush=True)
+
+            if since_commit >= args.commit_every or processed >= len(all_days):
+                df = pd.concat(frames, ignore_index=True)
+                df = (df.drop_duplicates(
+                            subset=["date_cst", "hour_cst", "vintage"],
+                            keep="last")
+                        .sort_values(["date_cst", "hour_cst", "vintage"]))
+                frames = [df]
+                DATA.mkdir(exist_ok=True)
+                df.to_csv(args.out, index=False, float_format="%.4f")
+                write_progress(df, anomalies, time.time() - t0, done_through)
+                print(f"  checkpoint: {len(df):,} rows -> {args.out.name}",
+                      flush=True)
+                if not args.no_git:
+                    git("add", str(args.out), str(PROGRESS), str(CELLS),
+                        check=False)
+                    r = git("commit", "-m",
+                            f"data: weather error panel through {done_through}",
+                            check=False)
+                    if r.returncode == 0:
+                        push_with_retry(args.branch)
+                since_commit = 0
+
+    print(f"done in {(time.time()-t0)/60:.1f} min, {len(anomalies)} anomalies")
 
 
 if __name__ == "__main__":

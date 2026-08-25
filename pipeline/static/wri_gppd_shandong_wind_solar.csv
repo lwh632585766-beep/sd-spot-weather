@@ -1,0 +1,149 @@
+name,gppd_idnr,capacity_mw,latitude,longitude,primary_fuel,commissioning_year,owner,source,country
+Lankou A,WKS0073756,175.0,34.9600,114.8490,Solar,,,Wiki-Solar,CHN
+Haizhou B,WKS0070157,110.0,34.6710,119.0170,Solar,,,Wiki-Solar,CHN
+Kenli A,WKS0069982,100.0,37.5510,118.8270,Solar,,,Wiki-Solar,CHN
+Shouguang C,WKS0069985,100.0,37.1810,118.7500,Solar,,,Wiki-Solar,CHN
+Xiangshui JS,WKS0064514,100.0,34.4010,119.9510,Solar,,,Wiki-Solar,CHN
+Mashang,WKS0064816,80.0,36.0130,114.8910,Solar,,,Wiki-Solar,CHN
+Hekou A,WKS0070225,70.0,38.0920,118.4070,Solar,,,Wiki-Solar,CHN
+Taiqian A,WKS0073752,70.0,35.9480,115.7470,Solar,,,Wiki-Solar,CHN
+Bawei Floating,WKS0069743,60.0,34.3730,120.0720,Solar,,,Wiki-Solar,CHN
+Weishan C,WKS0070127,60.0,34.9600,116.9260,Solar,,,Wiki-Solar,CHN
+Huanghua A,WKS0069501,50.0,38.3900,117.5770,Solar,,,Wiki-Solar,CHN
+Nanle B,WKS0073407,50.0,36.1500,115.1650,Solar,,,Wiki-Solar,CHN
+Peixian A,WKS0069986,50.0,34.8110,116.8270,Solar,,,Wiki-Solar,CHN
+Shouguang A,WKS0069983,50.0,37.2470,118.9320,Solar,,,Wiki-Solar,CHN
+Fengxian B,WKS0070131,40.0,34.7930,116.6500,Solar,,,Wiki-Solar,CHN
+Ganyu B,WKS0070158,40.0,34.7280,119.1730,Solar,,,Wiki-Solar,CHN
+Taiqian B,WKS0073757,40.0,35.9700,115.7920,Solar,,,Wiki-Solar,CHN
+Weishan E,WKS0070129,40.0,34.8310,117.0690,Solar,,,Wiki-Solar,CHN
+Kenli B,WKS0070224,35.0,37.4960,118.3880,Solar,,,Wiki-Solar,CHN
+Weishan D,WKS0070128,35.0,34.9220,116.9740,Solar,,,Wiki-Solar,CHN
+Fengxian A,WKS0070130,30.0,34.7930,116.6380,Solar,,,Wiki-Solar,CHN
+Hanergy Pizhou,WRI1025939,30.0,34.4900,117.6500,Solar,,Hanergy Pizhou Solar,UNFCCC CDM,CHN
+Shouguang B,WKS0069984,30.0,37.2470,118.9460,Solar,,,Wiki-Solar,CHN
+Weixian,WKS0066500,30.0,36.8740,115.2920,Solar,,,Wiki-Solar,CHN
+Xiangshui JS A,WKS0069742,30.0,34.4190,119.9420,Solar,,,Wiki-Solar,CHN
+Jiangshui A,WKS0069954,25.0,34.4200,119.9420,Solar,,,Wiki-Solar,CHN
+Linxi A,WKS0073736,25.0,36.8592,115.6434,Solar,,,Wiki-Solar,CHN
+Peixian E,WKS0070123,25.0,34.8530,116.8720,Solar,,,Wiki-Solar,CHN
+Pizhou II,WKS0066658,25.0,34.4970,117.6540,Solar,,,Wiki-Solar,CHN
+Zhaoyang A,WKS0070221,25.0,34.7120,117.1210,Solar,,,Wiki-Solar,CHN
+Yaoliwang,WKS0062417,23.8,34.4720,116.7200,Solar,,,Wiki-Solar,CHN
+Ganyu A,WKS0070156,20.0,34.7910,119.1700,Solar,,,Wiki-Solar,CHN
+Guanxian A,WKS0074076,20.0,36.6030,115.5260,Solar,,,Wiki-Solar,CHN
+Gulou A,WKS0070154,20.0,34.3030,117.3460,Solar,,,Wiki-Solar,CHN
+Haizhou A,WKS0069987,20.0,34.6080,119.3590,Solar,,,Wiki-Solar,CHN
+Julu A,WKS0073487,20.0,37.3420,115.0020,Solar,,,Wiki-Solar,CHN
+Lianyun A,WKS0070159,20.0,34.6930,119.2600,Solar,,,Wiki-Solar,CHN
+Nanle A,WKS0073406,20.0,36.1000,115.1110,Solar,,,Wiki-Solar,CHN
+Peixian D,WKS0070122,20.0,34.8660,116.8660,Solar,,,Wiki-Solar,CHN
+Shenxian A,WKS0073408,20.0,35.9290,115.3910,Solar,,,Wiki-Solar,CHN
+Taian,WKS0067367,20.0,35.9800,117.3200,Solar,,,Wiki-Solar,CHN
+Wanglou A,WKS0070222,20.0,34.7160,117.0780,Solar,,,Wiki-Solar,CHN
+Xiaoxian A,WKS0070153,20.0,34.4300,116.7470,Solar,,,Wiki-Solar,CHN
+Xuzhou Xiexin,WRI1026377,20.0,34.4100,117.3300,Solar,,,UNFCCC CDM,CHN
+Xuzhou Xiexin Solar Power Plant,WRI1071898,20.0,34.4080,117.3290,Solar,,,UNFCCC CDM Registry,CHN
+Lianyungang,WKS0064114,15.0,34.4410,118.7160,Solar,,,Wiki-Solar,CHN
+Qiuxian A,WKS0073735,15.0,36.8250,115.2380,Solar,,,Wiki-Solar,CHN
+Shanting A,WKS0070223,15.0,34.9750,117.6520,Solar,,,Wiki-Solar,CHN
+Weishan A,WKS0070125,15.0,34.9390,116.8350,Solar,,,Wiki-Solar,CHN
+Xiji A,WKS0069480,15.0,34.9720,117.4390,Solar,,,Wiki-Solar,CHN
+Shanxian A,WKS0073754,12.0,34.5620,116.1590,Solar,,,Wiki-Solar,CHN
+Laoshan,WKS0070006,11.3,37.1086,122.4093,Solar,,,Wiki-Solar,CHN
+Mashang A,WKS0069747,10.0,36.0210,114.9020,Solar,,,Wiki-Solar,CHN
+Peixian B,WKS0070120,10.0,34.8967,116.8394,Solar,,,Wiki-Solar,CHN
+Shandong Dezhou,WRI1025954,10.0,37.3500,116.3800,Solar,,CECEP Solar Power Generation (Dezhou) Co.  Ltd.,UNFCCC CDM,CHN
+Shandong Yizhao,WRI1026001,10.0,34.9700,117.4400,Solar,,,UNFCCC CDM,CHN
+Weishan B,WKS0070126,10.0,34.9430,116.8350,Solar,,,Wiki-Solar,CHN
+Xiangshui JS B,WKS0069955,10.0,34.4470,119.8610,Solar,,,Wiki-Solar,CHN
+Jining,WKS0060199,8.0,35.3570,116.6350,Solar,,,Wiki-Solar,CHN
+Xingtai floating,WKS0066280,8.0,36.8605,115.6408,Solar,,,Wiki-Solar,CHN
+Dongying,WRI1026383,7.0,37.4800,118.7500,Solar,,,UNFCCC CDM,CHN
+Peixian C,WKS0070121,6.0,34.8910,116.8390,Solar,,,Wiki-Solar,CHN
+Donghai A,WKS0070119,5.0,34.4220,118.6840,Solar,,,Wiki-Solar,CHN
+Xinyi A,WKS0070155,5.0,34.3580,118.4460,Solar,,,Wiki-Solar,CHN
+Shouguang,WKS0068025,4.0,37.0100,118.8300,Solar,,,Wiki-Solar,CHN
+Jiangsu Huadian Guanyun,WRI1071946,100.0,34.5138,119.6685,Wind,,,UNFCCC CDM Registry,CHN
+Gangxi,WRI1025921,69.0,37.0000,122.0900,Wind,,,China Wind Power Center,CHN
+Shandong Weihai Wind,WRI1071004,69.0,37.5028,122.1208,Wind,,,UNFCCC CDM Registry,CHN
+Huaneng Shandong Rushan Phase 2 And Phase 3 Bundle,WRI1071980,64.0,36.8014,121.5222,Wind,,,UNFCCC CDM Registry,CHN
+Cgn Anqiu Chengdingshan,WRI1072283,49.0,36.2257,118.9993,Wind,,,UNFCCC CDM Registry,CHN
+Cgn Boshan Yueyangshan Wind,WRI1072485,49.0,36.4554,117.9500,Wind,,,UNFCCC CDM Registry,CHN
+Cgn Shagou Phase 1 Wind,WRI1072380,49.0,36.0858,118.5277,Wind,,,UNFCCC CDM Registry,CHN
+Cgn Zhaoyuan Zhangxing Wind,WRI1072511,49.0,37.2931,120.1808,Wind,,,UNFCCC CDM Registry,CHN
+Datang Changqing Phase 1 Wind,WRI1072117,49.0,36.3280,116.5990,Wind,,,UNFCCC CDM Registry,CHN
+Datang Changqing Phase 2 Wind,WRI1072488,49.0,36.3480,116.6540,Wind,,,UNFCCC CDM Registry,CHN
+Datang Changyi Phase 1,WRI1072119,49.0,37.1320,121.0800,Wind,,,UNFCCC CDM Registry,CHN
+Datang Dongping Wind,WRI1072136,49.0,37.0280,116.2200,Wind,,,UNFCCC CDM Registry,CHN
+Datang Haiyang Xujiadian Phase 1,WRI1072540,49.0,37.1208,121.0525,Wind,,,UNFCCC CDM Registry,CHN
+Datang Jiaonan Liuwang Phase 1,WRI1072045,49.0,35.9367,119.7350,Wind,,,UNFCCC CDM Registry,CHN
+Datang Jiaonan Liuwang Phase 2 Wind,WRI1072047,49.0,35.9612,119.8183,Wind,,,UNFCCC CDM Registry,CHN
+Datang Pingdu Xinhe,WRI1072213,49.0,36.9971,119.5721,Wind,,,UNFCCC CDM Registry,CHN
+Datang Pingyin Phase 1 Wind,WRI1072504,49.0,36.2520,116.5080,Wind,,,UNFCCC CDM Registry,CHN
+Datang Pingyin Phase 2 Wind,WRI1072131,49.0,36.1280,116.3410,Wind,,,UNFCCC CDM Registry,CHN
+Datang Qixia Sujiadian Phase 1,WRI1072539,49.0,37.3958,120.7017,Wind,,,UNFCCC CDM Registry,CHN
+Datang Qixia Zangjiazhuang Garden,WRI1071978,49.0,37.5615,120.8431,Wind,,,UNFCCC CDM Registry,CHN
+Datang Wendeng Phase 2 Wind,WRI1072505,49.0,36.9600,122.1100,Wind,,,UNFCCC CDM Registry,CHN
+Datang Wendeng Wind,WRI1071775,49.0,36.9317,122.0858,Wind,,,UNFCCC CDM Registry,CHN
+Datang Zhaoyuan Jinling Phase 1,WRI1072452,49.0,37.3156,120.2664,Wind,,,UNFCCC CDM Registry,CHN
+Eshan Wind Haiyang City,WRI1071887,49.0,37.0440,121.2020,Wind,,,UNFCCC CDM Registry,CHN
+Guodian Penglai Hushan Phase 1,WRI1072168,49.0,37.5828,120.7532,Wind,,,UNFCCC CDM Registry,CHN
+Guodian Weihai Shanmayu,WRI1072431,49.0,37.2810,121.7080,Wind,,,UNFCCC CDM Registry,CHN
+Guodian Wulian Yuli Wind Power Phase 1,WRI1071889,49.0,35.8120,118.9968,Wind,,,UNFCCC CDM Registry,CHN
+Guodian Zhaoyuan Xiadian Phase 1,WRI1072444,49.0,37.1478,120.2458,Wind,,,UNFCCC CDM Registry,CHN
+Guohua Binzhou Zhanhua (Phase 1),WRI1071098,49.0,38.0600,118.0500,Wind,,,UNFCCC CDM Registry,CHN
+Guohua Dongying Guangrao Second Phase,WRI1072198,49.0,37.3208,118.9583,Wind,,,UNFCCC CDM Registry,CHN
+Guohua Dongying Hekou (Phase 1),WRI1071097,49.0,38.0700,118.2500,Wind,,,UNFCCC CDM Registry,CHN
+Guohua Dongying Hekou Phase 3,WRI1072109,49.0,38.0710,118.3630,Wind,,,UNFCCC CDM Registry,CHN
+Guohua Dongying Hekou Phase 4,WRI1072142,49.0,38.0665,118.3177,Wind,,,UNFCCC CDM Registry,CHN
+Guohua Dongying Lijin (Phase 1),WRI1071099,49.0,37.3700,118.1200,Wind,,,UNFCCC CDM Registry,CHN
+Guohua Guangrao (Phase 1),WRI1072223,49.0,37.3188,118.8708,Wind,,,UNFCCC CDM Registry,CHN
+Guohua Hekou (Phase 2),WRI1072320,49.0,38.0744,118.2758,Wind,,,UNFCCC CDM Registry,CHN
+Guohua Jiaonan Wind First Phase,WRI1072197,49.0,35.9908,119.9302,Wind,,,UNFCCC CDM Registry,CHN
+Guohua Rongcheng Phase 2,WRI1071703,49.0,37.3564,122.5210,Wind,,,UNFCCC CDM Registry,CHN
+Guohua Rongcheng Phase 3,WRI1072229,49.0,36.6833,121.1833,Wind,,,UNFCCC CDM Registry,CHN
+Guohua Rongcheng Phase 4,WRI1072277,49.0,37.2353,122.2697,Wind,,,UNFCCC CDM Registry,CHN
+Guohua Rongcheng Phase 5,WRI1072360,49.0,37.1747,122.2672,Wind,,,UNFCCC CDM Registry,CHN
+Guohua Zhucheng (Phase 1),WRI1072466,49.0,35.9167,119.6667,Wind,,,UNFCCC CDM Registry,CHN
+Guohua Zhucheng (Phase 2),WRI1072468,49.0,35.8500,119.5500,Wind,,,UNFCCC CDM Registry,CHN
+Hebei Chengde Huifeng,WRI1071067,49.0,34.5750,117.6026,Wind,,,UNFCCC CDM Registry,CHN
+Huaneng Binhai,WRI1071364,49.0,37.2103,119.0983,Wind,,,UNFCCC CDM Registry,CHN
+Huaneng Changyi Phase 1,WRI1071292,49.0,37.0930,119.5178,Wind,,,UNFCCC CDM Registry,CHN
+Huaneng Laizhou Phase 2,WRI1071622,49.0,37.3200,119.8872,Wind,,,UNFCCC CDM Registry,CHN
+Huaneng Shandong Hekou Phase 3,WRI1071685,49.0,38.0492,118.4642,Wind,,,UNFCCC CDM Registry,CHN
+Huaneng Shandong Hekou Phase 4,WRI1071697,49.0,38.0100,118.5300,Wind,,,UNFCCC CDM Registry,CHN
+Huaneng Shandong Penglai Daliuhang Wind Power Phase 1,WRI1071979,49.0,37.6008,120.9392,Wind,,,UNFCCC CDM Registry,CHN
+Huaneng Shandong Shouguang Phase 2 Wind,WRI1071807,49.0,37.2548,118.9590,Wind,,,UNFCCC CDM Registry,CHN
+Huaneng Shandong Shouguang Phase 3 Wind,WRI1071812,49.0,37.2845,118.8707,Wind,,,UNFCCC CDM Registry,CHN
+Huaneng Shandong Yishui Mazhan Phase 1 Wind,WRI1072282,49.0,36.1158,118.7694,Wind,,,UNFCCC CDM Registry,CHN
+Penglai Daliuhang Phase 1,WRI1071614,49.0,37.5281,121.0267,Wind,,,UNFCCC CDM Registry,CHN
+Qingdao Longxin Wind Phase 1,WRI1072263,49.0,36.8568,119.9112,Wind,,,UNFCCC CDM Registry,CHN
+Resources Haiyang Dongfang Phase 1 Wind,WRI1072001,49.0,36.9442,121.0267,Wind,,,UNFCCC CDM Registry,CHN
+Resources Juxian Donghong Phase 1 Wind,WRI1072087,49.0,35.9279,118.8971,Wind,,,UNFCCC CDM Registry,CHN
+Shandong Huaneng Hekou Phase 1,WRI1071397,49.0,37.9889,118.4939,Wind,,,UNFCCC CDM Registry,CHN
+Shandong Longjoin Zhaoyuan Phase 1,WRI1071991,49.0,37.4194,120.2381,Wind,,,UNFCCC CDM Registry,CHN
+Shandong Taipingshan,WRI1071918,49.0,36.1722,118.7128,Wind,,,UNFCCC CDM Registry,CHN
+Shandong Wendeng Zhangjiachan,WRI1071915,49.0,37.0936,122.0519,Wind,,,UNFCCC CDM Registry,CHN
+Tushan,WRI1025919,49.0,37.3600,119.8800,Wind,,,China Wind Power Center,CHN
+Chengshan Sancun,WRI1025922,48.75,36.9600,122.0700,Wind,,,China Wind Power Center,CHN
+Guodian Juxian Wind Power Phase 1,WRI1071888,48.0,35.9456,119.0247,Wind,,,UNFCCC CDM Registry,CHN
+Guodian Weifang Binhai Phase 1,WRI1072219,48.0,37.2321,119.1353,Wind,,,UNFCCC CDM Registry,CHN
+Laizhou Diaolongzui,WRI1070990,48.0,37.1000,119.5600,Wind,,,UNFCCC CDM Registry,CHN
+Roncheng Wind,WRI1071056,48.0,37.1500,122.3833,Wind,,,UNFCCC CDM Registry,CHN
+Shandong Penglai Phase 2,WRI1071568,48.0,37.7433,120.6958,Wind,,,UNFCCC CDM Registry,CHN
+Yantai Dongyuan Laizhou Phase 1,WRI1071130,48.0,37.1111,119.6292,Wind,,,UNFCCC CDM Registry,CHN
+Shandong Qixia Tangshan,WRI1072031,46.0,37.2470,120.8740,Wind,,,UNFCCC CDM Registry,CHN
+Shandong Muping Phase 1,WRI1071939,42.0,37.3447,121.8200,Wind,,,UNFCCC CDM Registry,CHN
+Shandong Rushan Luneng,WRI1071145,42.0,36.7336,121.5197,Wind,,,UNFCCC CDM Registry,CHN
+Liancheng,WRI1025917,40.25,37.9200,120.7500,Wind,,,China Wind Power Center,CHN
+Huadian Laizhou,WRI1071151,40.0,37.1778,119.8067,Wind,,,UNFCCC CDM Registry,CHN
+Shandong Liuwangzhuang,WRI1071742,38.0,36.5331,118.7000,Wind,,,UNFCCC CDM Registry,CHN
+Tangshanpeng,WRI1025918,31.7,37.3900,120.7000,Wind,,,China Wind Power Center,CHN
+Houpabu,WRI1025920,31.5,37.1200,119.6400,Wind,,,China Wind Power Center,CHN
+Shandong Changdao Wind,WRI1070996,27.0,37.5600,120.4300,Wind,,,UNFCCC CDM Registry,CHN
+Yantai Dongyuan Phase 1,WRI1071368,25.0,37.4100,121.0500,Wind,,,UNFCCC CDM Registry,CHN
+Qixia Tangshanpeng,WRI1070991,21.0,37.1733,120.5032,Wind,,,UNFCCC CDM Registry,CHN
+Shandong Yishui Tangwangshan,WRI1071917,20.0,35.8083,118.6333,Wind,,,UNFCCC CDM Registry,CHN
+Rongcheng Dongchudao,WRI1070989,15.0,37.2000,122.3400,Wind,,,UNFCCC CDM Registry,CHN
+Shandong Haiyang Qiuershan Wind,WRI1071078,15.0,36.6036,120.9656,Wind,,,UNFCCC CDM Registry,CHN
