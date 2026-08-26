@@ -1,0 +1,29 @@
+date,trade_day,event,category,ret_1d_pct,ret_3d_pct,ret_5d_pct,ret_10d_pct,vol_5d_over_median,gap_days_to_trade_day
+2021-07-16,2021-07-16,National ETS launch,other,,,,,3.63,0
+2021-10-26,2021-10-26,First compliance-cycle settlement notice,compliance-deadline,-1.374,-1.093,-1.844,-1.538,2.0,0
+2021-12-31,2021-12-31,First compliance deadline (2019-2020 vintages),compliance-deadline,-5.105,3.343,3.343,3.343,3.16,0
+2022-03-14,2022-05-26,Data-fraud enforcement disclosure,other,,,,,,73
+2022-11-03,2022-11-03,2021-2022 power allocation plan consultation draft,allocation,0.0,0.138,0.0,-0.345,0.49,0
+2023-03-15,2023-03-15,2021-2022 power allocation plan issued,allocation,0.0,1.33,0.0,0.0,0.0,0
+2023-07-07,2023-07-07,CCER restart signal: management measures consultation draft,ccer,-1.417,1.681,1.681,3.334,0.46,0
+2023-07-17,2023-07-17,2021-2022 settlement work notice (CCER offsets confirmed),compliance-deadline,0.0,1.653,5.559,1.735,0.33,0
+2023-10-19,2023-10-19,CCER trading management measures (trial) published,ccer,0.086,0.344,0.135,-4.563,20.03,0
+2023-10-24,2023-10-24,First four CCER methodologies issued,ccer,-0.418,-0.901,-2.323,-7.959,17.09,0
+2023-12-31,2024-01-02,Compliance deadline for 2021 and 2022 vintages,compliance-deadline,-1.843,-3.707,-11.207,-11.207,0.91,2
+2024-01-05,2024-01-05,State Council passes ETS Interim Regulations (draft),regulation,0.0,-7.5,-7.472,-8.919,0.33,0
+2024-01-22,2024-01-22,CCER trading restart (market launch),ccer,-5.427,0.638,0.863,2.151,0.31,0
+2024-02-04,2024-02-05,ETS Interim Regulations published (Order 775),regulation,-0.773,-0.773,-0.773,7.712,0.02,1
+2024-07-02,2024-07-02,2023-2024 power allocation plan consultation draft (banking restrictions),banking,3.283,2.701,2.514,-1.516,0.46,0
+2024-09-09,2024-09-09,"Expansion consultation draft: cement, steel, electrolytic aluminum",expansion,-0.312,-3.697,-0.355,7.487,0.96,0
+2024-10-21,2024-10-21,2023-2024 power allocation plan issued (final),allocation,0.607,0.568,0.712,0.885,2.32,0
+2024-12-31,2024-12-31,Compliance deadline for 2023 vintage (power),compliance-deadline,-0.225,-2.813,-2.813,-3.86,0.13,0
+2025-01-03,2025-01-03,Second batch CCER methodologies issued,ccer,-1.047,-1.047,-2.105,-2.095,0.11,0
+2025-03-26,2025-03-26,"Expansion work plan issued: steel, cement, aluminum smelting",expansion,1.698,-3.509,-4.058,-4.106,1.58,0
+2025-08-25,2025-08-25,CPC/State Council Opinions on strengthening the national carbon market,cap-transition,0.057,-0.828,-1.433,-6.039,4.65,0
+2025-09-30,2025-09-30,2024-2025 industrial allocation plan consultation draft,allocation,-1.064,-0.616,-4.843,-10.804,5.78,0
+2025-11-17,2025-11-17,2024-2025 industrial allocation plan issued (final),allocation,1.091,10.543,8.136,-0.868,9.0,0
+2025-12-31,2025-12-31,Compliance deadline: 2024 power vintage and first industrial-sector compliance,compliance-deadline,2.387,2.387,7.582,7.442,4.01,0
+2026-02-09,2026-02-09,Notice on 2026 national ETS work (next-wave sectors enter reporting),expansion,5.643,3.307,3.307,5.568,1.39,0
+2026-07-14,2026-07-14,15th Five-Year Carbon Peaking Action Plan published,cap-transition,0.536,3.053,3.075,7.012,3.09,0
+2026-07-27,2026-07-27,2025/2026 power + 2026 industrial allocation plan consultation draft,allocation,0.203,2.188,5.215,5.165,4.38,0
+2026-08-13,2026-08-13,"SCIO briefing: expansion to petrochemical/chemical, ~80% coverage target",expansion,-0.163,-0.102,-0.102,-0.102,2.25,0
